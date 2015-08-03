@@ -1,0 +1,4 @@
+g++ facerec_demo.cpp -o facerec_demo `pkg-config --cflags --libs opencv`
+g++ facerec_eigenfaces.cpp -o facerec_eigenfaces `pkg-config --cflags --libs opencv`
+g++ facerec_fisherfaces.cpp -o facerec_fisherfaces `pkg-config --cflags --libs opencv`
+g++ facerec_lbph.cpp -o facerec_lbph `pkg-config --cflags --libs opencv`

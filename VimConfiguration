@@ -1,0 +1,19 @@
+execute pathogen#infect()
+  2 set number
+  3 colorscheme molokai
+  4 set incsearch
+  5 set hlsearch
+  6 nmap n nzz
+  7 nmap N Nzz
+  8 set list listchars=tab:>-,trail:.
+  9 syntax enable
+ 10 let mapleader = "\<Space>"
+ 11 let g:indent_guides_guide_size = 2
+ 12 set statusline+=%#warningmsg#
+ 13 set statusline+=%{SyntasticStatuslineFlag()}
+ 14 set statusline+=%*
+ 15 
+ 16 let g:syntastic_always_populate_loc_list = 1
+ 17 let g:syntastic_auto_loc_list = 1
+ 18 let g:syntastic_check_on_open = 1
+ 19 let g:syntastic_check_on_wq = 0

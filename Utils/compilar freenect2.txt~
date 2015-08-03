@@ -1,0 +1,15 @@
+g++ Protonect.cpp -lfreenect2 -L /home/matheusm/libfreenect2/examples/protonect/lib/ -I /home/matheusm/libfreenect2/examples/protonect/include/ -I /home/matheusm/libfreenect2/examples/protonect/src/tinythread/ `pkg-config --libs --cflags opencv`
+g++ -o Cadastrarpessoa CadastroPessoa.cpp -lfreenect2 -L /home/matheusm/libfreenect2/examples/protonect/lib/ -I /home/matheusm/libfreenect2/examples/protonect/include/ -I /home/matheusm/libfreenect2/examples/protonect/src/tinythread/ `pkg-config --libs --cflags opencv`
+g++ -o SFRIR SFRIR.cpp -lfreenect2 -L /home/matheusm/libfreenect2/examples/protonect/lib/ -I /home/matheusm/libfreenect2/examples/protonect/include/ -I /home/matheusm/libfreenect2/examples/protonect/src/tinythread/ `pkg-config --libs --cflags opencv`
+
+
+sudo ./CadastroPessoa /home/matheusm/cascade.xml
+
+sudo ./bin/Protonect /home/matheusm/cascade.xml /home/matheusm/csvSFRIR.txt
+
+
+g++ -o CadastroPessoa CadastroPessoa.cpp -lfreenect2 -lusb-1.0 -L /home/matheusm/libfreenect2/examples/protonect/lib/ -I /home/matheusm/libfreenect2/examples/protonect/include/ -I /home/matheusm/libfreenect2/examples/protonect/src/tinythread/ -I /home/matheusm/libfreenect2/examples/protonect/include/libfreenect2/usb `pkg-config --libs --cflags opencv`
+
+g++ -o CadastroPessoa CadastroPessoa.cpp -lfreenect2 -lusb-1.0 -L /home/matheusm/libfreenect2/examples/protonect/lib/ -I /home/matheusm/libfreenect2/examples/protonect/include/ -I /home/matheusm/libfreenect2/examples/protonect/src/tinythread/ -I /home/matheusm/libfreenect2/examples/protonect/include/libfreenect2/usb `pkg-config --libs --cflags opencv`
+
+
