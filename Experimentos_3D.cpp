@@ -147,9 +147,13 @@ void compute_projection(IplImage *p, IplImage *m, CvPoint3D64f *xyz, int n, doub
   cvSet(p, cvRealScalar(-DBL_MAX), NULL);
   cvSet(m, cvRealScalar(0), NULL);
   for(i=0; i < n; i++) {
+    cout << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
     j = cy-cvRound(xyz[i].x*matrix[1][0]+xyz[i].y*matrix[1][1]+xyz[i].z*matrix[1][2]);
     k = cx+cvRound(xyz[i].x*matrix[0][0]+xyz[i].y*matrix[0][1]+xyz[i].z*matrix[0][2]);
     d = xyz[i].x*matrix[2][0]+xyz[i].y*matrix[2][1]+xyz[i].z*matrix[2][2];
+    //cout << j << " " << k << endl;
+    
+    //cout << d * (1000.0f) << endl;
 
     if(j >= 0 && k >= 0 && j < height && k < width && d > CV_IMAGE_ELEM(p, double, j, k)) {
       CV_IMAGE_ELEM(p, double, j, k) = d;
@@ -322,6 +326,16 @@ int main(int argc, char *argv[])
   std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
 
   libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
+  //parametros da camera
+  float fx = dev->getIrCameraParams().fx;
+  float fy = dev->getIrCameraParams().fy;
+  float cx = dev->getIrCameraParams().cx;
+  float cy = dev->getIrCameraParams().cy;
+  float k1 = dev->getIrCameraParams().k1;
+  float k2 = dev->getIrCameraParams().k2;
+  float p1 = dev->getIrCameraParams().p1;
+  float p2 = dev->getIrCameraParams().p2;
+  float k3 = dev->getIrCameraParams().k3;
 
   int width = 512;
   int height = 424;
@@ -335,17 +349,17 @@ int main(int argc, char *argv[])
   }
 
   cv::Mat k = cv::Mat::eye(3, 3, CV_32F);
-  k.at<float>(0,0) = dev->getIrCameraParams().fx;
-  k.at<float>(1,1) = dev->getIrCameraParams().fy;
-  k.at<float>(0,2) = dev->getIrCameraParams().cx;
-  k.at<float>(1,2) = dev->getIrCameraParams().cy;
+  k.at<float>(0,0) = fx;
+  k.at<float>(1,1) = fy;
+  k.at<float>(0,2) = cx;
+  k.at<float>(1,2) = cy;
 
   cv::Mat dist_coeffs = cv::Mat::zeros(1, 8, CV_32F);
-  dist_coeffs.at<float>(0,0) = dev->getIrCameraParams().k1;
-  dist_coeffs.at<float>(0,1) = dev->getIrCameraParams().k2;
-  dist_coeffs.at<float>(0,2) = dev->getIrCameraParams().p1;
-  dist_coeffs.at<float>(0,3) = dev->getIrCameraParams().p2;
-  dist_coeffs.at<float>(0,4) = dev->getIrCameraParams().k3;
+  dist_coeffs.at<float>(0,0) = k1;
+  dist_coeffs.at<float>(0,1) = k2;
+  dist_coeffs.at<float>(0,2) = p1;
+  dist_coeffs.at<float>(0,3) = p2;
+  dist_coeffs.at<float>(0,4) = k3;
 
   cv::Mat new_camera_matrix = cv::getOptimalNewCameraMatrix(k, dist_coeffs, cv::Size2i(height,width), 0.0);
 
@@ -356,8 +370,9 @@ int main(int argc, char *argv[])
   Mat xycords = cv_img_corrected_cords;
 
   float x = 0.0f, y = 0.0f;
-
-  while(!protonect_shutdown)
+  bool shutdown = true;
+  //while(!protonect_shutdown)
+  while(shutdown)
   {
     listener.waitForNewFrame(frames);
     libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
@@ -365,31 +380,61 @@ int main(int argc, char *argv[])
     libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
 
     Mat depth_image = cv::Mat(depth->height, depth->width, CV_32FC1, depth->data) / 4500.0f;
+
     //cv::imshow("rgb", cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data));
     //cv::imshow("ir", cv::Mat(ir->height, ir->width, CV_32FC1, ir->data) / 20000.0f);
-    CvPoint3D64f *xyz;
+    static CvPoint3D64f *xyz;
+    xyz = (CvPoint3D64f *) malloc(SIZE*sizeof(CvPoint3D64f));
     float* ptr = (float*) (depth_image.data);
+
     uint pixel_count = depth_image.rows * depth_image.cols;
+    float menor = 999999.0;
+
+    //for(int i = 0; i < depth_image.rows; i++) {
+      //for(int j = 0; j < depth_image.cols; j++)
+        //cout << depth_image.at<uint16_t>(i,j) << endl;
+    //}
+
+    /*for(int i = 0; i < depth_image.rows; i++) {
+      for(int j = 0; j < depth_image.cols; j++) {
+          cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
+          x = xy[1]; y = xy[0];
+          xyz[i].z = depth_image.at<uint16_t>(i,j); // Convert from mm to meters
+          if (xyz[i].z < menor && xyz[i].z != 0)
+            menor = xyz[i].z;
+          xyz[i].x = (x - cx) * xyz[i].z / fx;
+          xyz[i].y = (y - cy) * xyz[i].z / fy;
+          // CvPoint3D64f point;
+          // point.z = (static_cast<float>(*ptr)) / (1000.0f); // Convert from mm to meters
+          // point.x = (x - dev->getIrCameraParams().cx) * point.z / fx;
+          // point.y = (y - dev->getIrCameraParams().cy) * point.z / fy;
+          //cout << "v " << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
+      }
+    }*/
+
+
     for (uint i = 0; i < pixel_count; ++i)
     {
         cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
         x = xy[1]; y = xy[0];
+        //cout << (static_cast<float>(*ptr)) << endl;
         xyz[i].z = (static_cast<float>(*ptr)) / (1000.0f); // Convert from mm to meters
-        xyz[i].x = (x - dev->getIrCameraParams().cx) * xyz[i].z / dev->getIrCameraParams().fx;
-        xyz[i].y = (y - dev->getIrCameraParams().cy) * xyz[i].z / dev->getIrCameraParams().fy;
-        //CvPoint3D64f point;
-        //point.z = (static_cast<float>(*ptr)) / (1000.0f); // Convert from mm to meters
-        //point.x = (x - dev->getIrCameraParams().cx) * point.z / dev->getIrCameraParams().fx;
-        //point.y = (y - dev->getIrCameraParams().cy) * point.z / dev->getIrCameraParams().fy;
-        //cout << "v " << point.x << " " << point.y << " " << point.z << endl;
+        if (xyz[i].z < menor && xyz[i].z != 0)
+          menor = xyz[i].z;
+        xyz[i].x = (x - cx) * xyz[i].z / fx;
+        xyz[i].y = (y - cy) * xyz[i].z / fy;
+        // CvPoint3D64f point;
+        // point.z = (static_cast<float>(*ptr)) / (1000.0f); // Convert from mm to meters
+        // point.x = (x - dev->getIrCameraParams().cx) * point.z / fx;
+        // point.y = (y - dev->getIrCameraParams().cy) * point.z / fy;
+        //cout << "v " << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
         ++ptr;
     }
 
     static IplImage *p, *v, *m;
     static int width, height, cx, cy;
     double matrix[3][3], imatrix[3][3], background;
-
-    background = 0.000199578;
+    background = menor;
     width = (int)(X_WIDTH*RESOLUTION);
     height = (int)(X_WIDTH*RESOLUTION);
 
@@ -397,20 +442,30 @@ int main(int argc, char *argv[])
     m = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
 
 
-    //computeRotationMatrix(matrix, imatrix, 0, -20*0.017453293, 0);
-    //compute_projection(p, m, xyz, pixel_count, matrix, background);
-    //Mat projecao= cv::cvarrToMat(p); 
-    //cv::imshow("depth", projecao);
+    computeRotationMatrix(matrix, imatrix, 0, 0, 0);
+    compute_projection(p, m, xyz, pixel_count, matrix, background);
+    //double maior = 0.0;
+    //double menor = 999999.9;
+   // for(int i = 0; i < p->height; i++) {
+      //for(int j = 0; j < p->width; j++) {
+        //cout << CV_IMAGE_ELEM(p, double, i, j) << endl;
+      //}
+    //}
+    cout << "Background " << menor << endl;
+    Mat projecao= cv::cvarrToMat(p); 
+    cv::imshow("input original", depth_image);
+    cv::imshow("projecao", projecao);
 
     //registration->apply(rgb,depth,&undistorted,&registered);
 
     //cv::imshow("undistorted", cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data) / 4500.0f);
     //cv::imshow("registered", cv::Mat(registered.height, registered.width, CV_8UC4, registered.data));
 
-    int key = cv::waitKey(1);
+    int key = cv::waitKey(0);
     protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape
 
     listener.release(frames);
+    shutdown = false;
     //libfreenect2::this_thread::sleep_for(libfreenect2::chrono::milliseconds(100));
   }
 
