@@ -65,8 +65,8 @@ using namespace cv::face;
 #define DEPTH_CTHRESHOLD 675          // Maximum disparity value
 #define DEPTH_THRESHOLD 875         // Maximum disparity value
 // Detection parameters
-#define X_WIDTH 1800.0            // Orthogonal projection width - in mm
-#define Y_WIDTH 1600.0            // Orthogonal projection height - in mm
+#define X_WIDTH 2800.0            // Orthogonal projection width - in mm
+#define Y_WIDTH 2600.0            // Orthogonal projection height - in mm
 #define RESOLUTION 0.127272727        // Resolution in pixels per mm
 #define FACE_SIZE 21            // Face size - 165*RESOLUTION
 #define FACE_HALF_SIZE 10         // (165*RESOLUTION)/2
@@ -147,13 +147,13 @@ void compute_projection(IplImage *p, IplImage *m, CvPoint3D64f *xyz, int n, doub
   cvSet(p, cvRealScalar(-DBL_MAX), NULL);
   cvSet(m, cvRealScalar(0), NULL);
   for(i=0; i < n; i++) {
-    cout << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
+    //cout << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
     j = cy-cvRound(xyz[i].x*matrix[1][0]+xyz[i].y*matrix[1][1]+xyz[i].z*matrix[1][2]);
     k = cx+cvRound(xyz[i].x*matrix[0][0]+xyz[i].y*matrix[0][1]+xyz[i].z*matrix[0][2]);
     d = xyz[i].x*matrix[2][0]+xyz[i].y*matrix[2][1]+xyz[i].z*matrix[2][2];
     //cout << j << " " << k << endl;
     
-    //cout << d * (1000.0f) << endl;
+    //cout << d << endl;
 
     if(j >= 0 && k >= 0 && j < height && k < width && d > CV_IMAGE_ELEM(p, double, j, k)) {
       CV_IMAGE_ELEM(p, double, j, k) = d;
@@ -380,7 +380,6 @@ int main(int argc, char *argv[])
     libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
 
     Mat depth_image = cv::Mat(depth->height, depth->width, CV_32FC1, depth->data) / 4500.0f;
-
     //cv::imshow("rgb", cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data));
     //cv::imshow("ir", cv::Mat(ir->height, ir->width, CV_32FC1, ir->data) / 20000.0f);
     static CvPoint3D64f *xyz;
@@ -388,53 +387,59 @@ int main(int argc, char *argv[])
     float* ptr = (float*) (depth_image.data);
 
     uint pixel_count = depth_image.rows * depth_image.cols;
-    float menor = 999999.0;
-
-    //for(int i = 0; i < depth_image.rows; i++) {
-      //for(int j = 0; j < depth_image.cols; j++)
-        //cout << depth_image.at<uint16_t>(i,j) << endl;
-    //}
+    
+    double menorX = 999999.0, menorY = 999999.0, menor = 999999.0;
+    double maiorX = 0.0, maiorY = 0.0, maior = 0.0;
 
     /*for(int i = 0; i < depth_image.rows; i++) {
       for(int j = 0; j < depth_image.cols; j++) {
           cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
           x = xy[1]; y = xy[0];
-          xyz[i].z = depth_image.at<uint16_t>(i,j); // Convert from mm to meters
-          if (xyz[i].z < menor && xyz[i].z != 0)
-            menor = xyz[i].z;
+          //cout << depth_image.at<uint16_t>(i,j) << endl;
+          xyz[i].z = depth_image.at<uint16_t>(i,j);
           xyz[i].x = (x - cx) * xyz[i].z / fx;
           xyz[i].y = (y - cy) * xyz[i].z / fy;
-          // CvPoint3D64f point;
-          // point.z = (static_cast<float>(*ptr)) / (1000.0f); // Convert from mm to meters
-          // point.x = (x - dev->getIrCameraParams().cx) * point.z / fx;
-          // point.y = (y - dev->getIrCameraParams().cy) * point.z / fy;
-          //cout << "v " << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
+          if(xyz[i].x > maiorX)
+            maiorX = xyz[i].x;
+          if(xyz[i].x < menorX)
+            menorX = xyz[i].x;
+          if(xyz[i].y > maiorY)
+            maiorY = xyz[i].y;
+          if(xyz[i].x < menorY)
+            menorY = xyz[i].x;
       }
-    }*/
-
-
+    }
+    cout << "Menor e Maior X = " << menorX << " " << maiorX << endl;
+    cout << "Menor e Maior Y = " << menorY << " " << maiorY << endl;*/
+    
     for (uint i = 0; i < pixel_count; ++i)
     {
         cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
         x = xy[1]; y = xy[0];
-        //cout << (static_cast<float>(*ptr)) << endl;
-        xyz[i].z = (static_cast<float>(*ptr)) / (1000.0f); // Convert from mm to meters
-        if (xyz[i].z < menor && xyz[i].z != 0)
-          menor = xyz[i].z;
-        xyz[i].x = (x - cx) * xyz[i].z / fx;
+        //cout << (static_cast<float>(*ptr)) * (1000.0f) << endl;
+        xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Convert from mm to meters
+        xyz[i].x = -(x - cx) * xyz[i].z / fx;
         xyz[i].y = (y - cy) * xyz[i].z / fy;
-        // CvPoint3D64f point;
-        // point.z = (static_cast<float>(*ptr)) / (1000.0f); // Convert from mm to meters
-        // point.x = (x - dev->getIrCameraParams().cx) * point.z / fx;
-        // point.y = (y - dev->getIrCameraParams().cy) * point.z / fy;
-        //cout << "v " << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
         ++ptr;
+        if(xyz[i].z < menor)
+          menor = xyz[i].z;
+        if(xyz[i].x > maiorX)
+            maiorX = xyz[i].x;
+          if(xyz[i].x < menorX)
+            menorX = xyz[i].x;
+          if(xyz[i].y > maiorY)
+            maiorY = xyz[i].y;
+          if(xyz[i].x < menorY)
+            menorY = xyz[i].x;
     }
+    cout << "Menor e Maior X = " << menorX << " " << maiorX << endl;
+    cout << "Menor e Maior Y = " << menorY << " " << maiorY << endl;
 
     static IplImage *p, *v, *m;
     static int width, height, cx, cy;
     double matrix[3][3], imatrix[3][3], background;
     background = menor;
+    
     width = (int)(X_WIDTH*RESOLUTION);
     height = (int)(X_WIDTH*RESOLUTION);
 
@@ -444,15 +449,42 @@ int main(int argc, char *argv[])
 
     computeRotationMatrix(matrix, imatrix, 0, 0, 0);
     compute_projection(p, m, xyz, pixel_count, matrix, background);
-    //double maior = 0.0;
-    //double menor = 999999.9;
-   // for(int i = 0; i < p->height; i++) {
-      //for(int j = 0; j < p->width; j++) {
+    menor = 999999.0; 
+    for(int i = 0; i < width; i++) {
+      for(int j = 0; j < height; j++) {
         //cout << CV_IMAGE_ELEM(p, double, i, j) << endl;
-      //}
-    //}
-    cout << "Background " << menor << endl;
+        double x = CV_IMAGE_ELEM(p, double, i, j);
+        if(x > maior)
+          maior = x;
+        if(x < menor && x != 0)
+          menor = x;
+      }
+    }
+    double a, b;
+    a = 255/(maior-menor);
+    b = 1 - (menor * a);
+    for(int i = 0; i < width; i++) {
+      for(int j = 0; j < height; j++) {
+        x = CV_IMAGE_ELEM(p, double, i, j);
+        if(x != 0)
+          CV_IMAGE_ELEM(p, double, i, j) = (x * a) + b;
+        //cout << CV_IMAGE_ELEM(p, double, i, j) << endl;
+      }
+    }
+    //cout << menor << " " << maior << endl;
     Mat projecao= cv::cvarrToMat(p); 
+    for(int i = 0; i < projecao.rows; i++) {
+      for(int j = 0; j < projecao.cols; j++) {
+        cout << projecao.at<double>(i,j) << endl;
+      }
+    }
+    #if 1
+    Mat1b x(projecao.rows, projecao.cols);
+    for(int i = 0; i < projecao.rows; i++)
+      for(int j = 0; j < projecao.cols; j++) 
+        x.at<uint8_t>(i, j) = projecao.at<double>(i, j);
+    cv::imshow("input original2", x);
+    #endif
     cv::imshow("input original", depth_image);
     cv::imshow("projecao", projecao);
 
