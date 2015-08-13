@@ -47,6 +47,7 @@ using namespace cv;
 using namespace std;
 using namespace cv::face;
 
+const string PATH_CASCADE_FACE = "/home/matheusm/Cascades/ALL_Spring2003_3D.xml";
 // Image parameters
 #define WIDTH 512             // Input image width
 #define HEIGHT 424              // Input image height
@@ -79,8 +80,6 @@ using namespace cv::face;
 #define OUTLIER_THRESHOLD 15.0
 #define OUTLIER_SQUARED_THRESHOLD 225.0
 #define MAX_ICP_ITERATIONS 200
-
-const string PATH_CASCADE_FACE = "/home/matheusm/ALL_Spring2003_3D.xml";
 
 bool protonect_shutdown = false;
 
@@ -235,6 +234,45 @@ void compute_projection(IplImage *p, IplImage *m, CvPoint3D64f *xyz, int n, doub
     }
 }
 
+
+
+float fx;
+float fy;
+float cx;
+float cy;
+float k1;
+float k2;
+float p1;
+float p2;
+float k3;
+
+void xyz2depth(CvPoint3D64f *pt, double *i, double *j, double *s, Mat xycords) {
+  double z, x, y;
+
+  //z = -pt->z / (1000.0f);
+  x = -(fx * pt->x - cx * pt->z)/pt->z;
+  y = (fy * pt->y - cy * pt->z)/pt->z;
+  int p;
+  cout << floor(x) << " " << floor(y) << endl;
+  for(p = 0; p < 217088; p++) {
+    cv::Vec2f xy = xycords.at<cv::Vec2f>(0, p);
+    if(floor(xy[1]) == floor(x) && floor(xy[0]) == floor(y))
+      cout << x << " " << xy[1] << "// " << y << " " << xy[0] << endl;
+    if(x == xy[1] && y == xy[0])
+      break;
+  }
+  //cout << p << endl;
+  *j = p / 512;
+  *i = p / 424;
+  *s = fabs(((pt->x+100.0)/z)*fx+cx-*j);
+  
+  /*cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
+  x = xy[1]; y = xy[0];
+  xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Converte metros pra mm
+  xyz[i].x = -(x - cx) * xyz[i].z / fx;
+  xyz[i].y = (y - cy) * xyz[i].z / fy;*/
+}
+
 int main(int argc, char *argv[])
 {
   std::string program_path(argv[0]);
@@ -327,15 +365,15 @@ int main(int argc, char *argv[])
 
   libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
   //parametros da camera
-  float fx = dev->getIrCameraParams().fx;
-  float fy = dev->getIrCameraParams().fy;
-  float cx = dev->getIrCameraParams().cx;
-  float cy = dev->getIrCameraParams().cy;
-  float k1 = dev->getIrCameraParams().k1;
-  float k2 = dev->getIrCameraParams().k2;
-  float p1 = dev->getIrCameraParams().p1;
-  float p2 = dev->getIrCameraParams().p2;
-  float k3 = dev->getIrCameraParams().k3;
+   fx = dev->getIrCameraParams().fx;
+   fy = dev->getIrCameraParams().fy;
+   cx = dev->getIrCameraParams().cx;
+   cy = dev->getIrCameraParams().cy;
+   k1 = dev->getIrCameraParams().k1;
+   k2 = dev->getIrCameraParams().k2;
+   p1 = dev->getIrCameraParams().p1;
+   p2 = dev->getIrCameraParams().p2;
+   k3 = dev->getIrCameraParams().k3;
 
   int width = 512;
   int height = 424;
@@ -365,14 +403,12 @@ int main(int argc, char *argv[])
 
   cv::undistortPoints(cv_img_cords, cv_img_corrected_cords, k, dist_coeffs, cv::noArray(), new_camera_matrix);
 
-  
-
   Mat xycords = cv_img_corrected_cords;
 
   float x = 0.0f, y = 0.0f;
   bool shutdown = true;
-  //while(!protonect_shutdown)
-  while(shutdown)
+  while(!protonect_shutdown)
+  //while(shutdown)
   {
     listener.waitForNewFrame(frames);
     libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
@@ -382,62 +418,32 @@ int main(int argc, char *argv[])
     Mat depth_image = cv::Mat(depth->height, depth->width, CV_32FC1, depth->data) / 4500.0f;
     //cv::imshow("rgb", cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data));
     //cv::imshow("ir", cv::Mat(ir->height, ir->width, CV_32FC1, ir->data) / 20000.0f);
-    static CvPoint3D64f *xyz;
+    static CvPoint3D64f *xyz, *list, *clist;
+    CvPoint3D64f avg;
     xyz = (CvPoint3D64f *) malloc(SIZE*sizeof(CvPoint3D64f));
     float* ptr = (float*) (depth_image.data);
+    static CvHaarClassifierCascade *face_cascade;
 
     uint pixel_count = depth_image.rows * depth_image.cols;
     
     double menorX = 999999.0, menorY = 999999.0, menor = 999999.0;
     double maiorX = 0.0, maiorY = 0.0, maior = 0.0;
-
-    /*for(int i = 0; i < depth_image.rows; i++) {
-      for(int j = 0; j < depth_image.cols; j++) {
-          cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
-          x = xy[1]; y = xy[0];
-          //cout << depth_image.at<uint16_t>(i,j) << endl;
-          xyz[i].z = depth_image.at<uint16_t>(i,j);
-          xyz[i].x = (x - cx) * xyz[i].z / fx;
-          xyz[i].y = (y - cy) * xyz[i].z / fy;
-          if(xyz[i].x > maiorX)
-            maiorX = xyz[i].x;
-          if(xyz[i].x < menorX)
-            menorX = xyz[i].x;
-          if(xyz[i].y > maiorY)
-            maiorY = xyz[i].y;
-          if(xyz[i].x < menorY)
-            menorY = xyz[i].x;
-      }
-    }
-    cout << "Menor e Maior X = " << menorX << " " << maiorX << endl;
-    cout << "Menor e Maior Y = " << menorY << " " << maiorY << endl;*/
     
     for (uint i = 0; i < pixel_count; ++i)
     {
         cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
         x = xy[1]; y = xy[0];
-        //cout << (static_cast<float>(*ptr)) * (1000.0f) << endl;
-        xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Convert from mm to meters
+        xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Converte metros pra mm
         xyz[i].x = -(x - cx) * xyz[i].z / fx;
         xyz[i].y = (y - cy) * xyz[i].z / fy;
         ++ptr;
         if(xyz[i].z < menor)
           menor = xyz[i].z;
-        if(xyz[i].x > maiorX)
-            maiorX = xyz[i].x;
-          if(xyz[i].x < menorX)
-            menorX = xyz[i].x;
-          if(xyz[i].y > maiorY)
-            maiorY = xyz[i].y;
-          if(xyz[i].x < menorY)
-            menorY = xyz[i].x;
     }
-    cout << "Menor e Maior X = " << menorX << " " << maiorX << endl;
-    cout << "Menor e Maior Y = " << menorY << " " << maiorY << endl;
 
-    static IplImage *p, *v, *m;
+    static IplImage *p, *m, *sum, *sqsum, *tiltedsum, *msum, *sumint, *tiltedsumint;;
     static int width, height, cx, cy;
-    double matrix[3][3], imatrix[3][3], background;
+    double matrix[3][3], imatrix[3][3], background, X, Y, Z;;
     background = menor;
     
     width = (int)(X_WIDTH*RESOLUTION);
@@ -452,7 +458,6 @@ int main(int argc, char *argv[])
     menor = 999999.0; 
     for(int i = 0; i < width; i++) {
       for(int j = 0; j < height; j++) {
-        //cout << CV_IMAGE_ELEM(p, double, i, j) << endl;
         double x = CV_IMAGE_ELEM(p, double, i, j);
         if(x > maior)
           maior = x;
@@ -460,6 +465,7 @@ int main(int argc, char *argv[])
           menor = x;
       }
     }
+    #if 0
     double a, b;
     a = 255/(maior-menor);
     b = 1 - (menor * a);
@@ -468,32 +474,112 @@ int main(int argc, char *argv[])
         x = CV_IMAGE_ELEM(p, double, i, j);
         if(x != 0)
           CV_IMAGE_ELEM(p, double, i, j) = (x * a) + b;
-        //cout << CV_IMAGE_ELEM(p, double, i, j) << endl;
       }
     }
-    //cout << menor << " " << maior << endl;
     Mat projecao= cv::cvarrToMat(p); 
-    for(int i = 0; i < projecao.rows; i++) {
-      for(int j = 0; j < projecao.cols; j++) {
-        cout << projecao.at<double>(i,j) << endl;
-      }
-    }
-    #if 1
+    
     Mat1b x(projecao.rows, projecao.cols);
     for(int i = 0; i < projecao.rows; i++)
       for(int j = 0; j < projecao.cols; j++) 
         x.at<uint8_t>(i, j) = projecao.at<double>(i, j);
+    
     cv::imshow("input original2", x);
     #endif
-    cv::imshow("input original", depth_image);
-    cv::imshow("projecao", projecao);
+
+    face_cascade = (CvHaarClassifierCascade *) cvLoad("/home/matheusm/Cascades/ALL_Spring2003_3D.xml", 0, 0, 0);
+    sum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
+    sqsum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
+    tiltedsum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
+    sumint = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
+    tiltedsumint = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
+    msum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
+
+    list = (CvPoint3D64f *) malloc(2000*sizeof(CvPoint3D64f));
+    clist = list+1000;
+
+    cvIntegral(p, sum, sqsum, tiltedsum);
+    cvIntegral(m, msum, NULL, NULL);
+    int i, j, k = 0, l, n, aX, aY, aZ;
+    for(i=0; i < height+1; i++)
+      for(j=0; j < width+1; j++) {
+        CV_IMAGE_ELEM(sumint, int, i, j) = CV_IMAGE_ELEM(sum, double, i, j);
+        CV_IMAGE_ELEM(tiltedsumint, int, i, j) = CV_IMAGE_ELEM(tiltedsum, double, i, j);
+      }
+
+    cvSetImagesForHaarClassifierCascade(face_cascade, sumint, sqsum, tiltedsumint, 1.0);
+
+    for(i=0; i < height-20; i++)
+      for(j=0; j < width-20; j++)
+        if(CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j)+CV_IMAGE_ELEM(msum, int, i, j) == 441)
+          if(cvRunHaarClassifierCascade(face_cascade, cvPoint(j,i), 0) > 0) {
+            X = (j+FACE_HALF_SIZE-cx)/RESOLUTION;
+            Y = (cy-i-FACE_HALF_SIZE)/RESOLUTION;
+            Z = (CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE-5)+CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE-5))/121.0/RESOLUTION;
+
+            list[k].x = X*imatrix[0][0]+Y*imatrix[0][1]+Z*imatrix[0][2];
+            list[k].y = X*imatrix[1][0]+Y*imatrix[1][1]+Z*imatrix[1][2];
+            list[k].z = X*imatrix[2][0]+Y*imatrix[2][1]+Z*imatrix[2][2];
+            k++;
+          }
+    // Merge multiple detections
+    vector<Vec4d> r;
+    Vec4d tmp;
+    while(k > 0) {
+      avg.x = clist[0].x = list[0].x;
+      avg.y = clist[0].y = list[0].y;
+      avg.z = clist[0].z = list[0].z;
+      xyz2depth(&avg, &tmp[1], &tmp[0], &tmp[2], xycords);
+      tmp[3] = j;
+      r.push_back(tmp);
+      k--;
+      /*avg.x = clist[0].x = list[0].x;
+      avg.y = clist[0].y = list[0].y;
+      avg.z = clist[0].z = list[0].z;
+      list[0].x = DBL_MAX;
+
+      j=1;
+      for(l=0; l < j; l++)
+        for(i=1; i < k; i++)
+          if(list[i].x != DBL_MAX) {
+            X = sqrt(pow(list[i].x-clist[l].x, 2.0)+pow(list[i].y-clist[l].y, 2.0)+pow(list[i].z-clist[l].z, 2.0));
+            if(X < 50.0) {
+              avg.x += clist[j].x = list[i].x;
+              avg.y += clist[j].y = list[i].y;
+              avg.z += clist[j].z = list[i].z;
+              list[i].x = DBL_MAX;
+              j++;
+            }
+          }
+
+      avg.x /= j;
+      avg.y /= j;
+      avg.z /= j;
+
+      xyz2depth(&avg, &tmp[1], &tmp[0], &tmp[2], xycords);
+      tmp[3] = j;
+      r.push_back(tmp);
+
+      j=0;
+      for(i=1; i < k; i++)
+        if(list[i].x != DBL_MAX) {
+          list[j].x = list[i].x;
+          list[j].y = list[i].y;
+          list[j].z = list[i].z;
+          j++;
+        }
+      k=j;*/
+    }
+    for(int i=0; i < r.size(); i++)
+      rectangle(depth_image, Point(r[i][0]-r[i][2],r[i][1]-r[i][2]), Point(r[i][0]+r[i][2],r[i][1]+r[i][2]), CV_RGB(0,255,0), 2, 8, 0);
+    cv::imshow("input", depth_image);
+    //cv::imshow("projecao", projecao);
 
     //registration->apply(rgb,depth,&undistorted,&registered);
 
     //cv::imshow("undistorted", cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data) / 4500.0f);
     //cv::imshow("registered", cv::Mat(registered.height, registered.width, CV_8UC4, registered.data));
 
-    int key = cv::waitKey(0);
+    int key = cv::waitKey(1);
     protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape
 
     listener.release(frames);
