@@ -20,10 +20,10 @@ const int MAX_FRAME_LOST = 4;
 const int BORDER = 8;  // Border between GUI elements to the edge of the image.
 const int FACE_SIZE = 200;
 //parametros reconhecimento continuo
-const float Usafe = 30.0509; //42.1643;
-const float UnotSafe = 95.6884; //109.791;
-const float Rsafe = 24.8666; //35.482; 
-const float RnotSafe = 30.7036; //41.2861; 
+const float Usafe = 15.8142; //30.0509;
+const float UnotSafe = 47.7215; //95.6884;
+const float Rsafe = 8.02247; //24.8666;
+const float RnotSafe = 6.05694; //30.7036;
 
 const float E = 2.71828182845904523536;
 const float LN2 = 0.693147180559945309417;
@@ -34,7 +34,7 @@ using namespace cv;
 using namespace cv::face;
 using namespace std;
 
-const string PATH_CASCADE_FACE = "/home/matheusm/Cascades/IR_Cascade.xml";
+const string PATH_CASCADE_FACE = "/home/matheusm/Cascades/cascade.xml";
 const string PATH_CASCADE_RIGHTEYE = "/home/matheusm/Cascades/haarcascade_mcs_righteye_alt.xml";
 const string PATH_CASCADE_LEFTEYE = "/home/matheusm/Cascades/haarcascade_mcs_lefteye_alt.xml";
 const string PATH_CASCADE_BOTHEYES = "/home/matheusm/Cascades/haarcascade_eye.xml";

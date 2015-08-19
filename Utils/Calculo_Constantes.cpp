@@ -11,7 +11,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "opencv2/core/core.hpp"
-#include "opencv2/contrib/contrib.hpp"
+#include "opencv2/face.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
@@ -20,8 +20,9 @@
 
 using namespace std;
 using namespace cv;
+using namespace cv::face;
 
-const string PATH_CSV = "/home/matheusm/libfreenect2/examples/protonect/csvConstantes.txt";
+const string PATH_CSV = "/home/matheusm/csvConstantes.txt";
 
 static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';') {
     std::ifstream file(filename.c_str(), ifstream::in);

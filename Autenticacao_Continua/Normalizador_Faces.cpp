@@ -1,5 +1,4 @@
 #include "opencv2/core/core.hpp"
-#include "opencv2/contrib/contrib.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <iostream>
 #include <fstream>
@@ -45,9 +44,9 @@ Mat faceNormalize(Mat face, int desiredFaceWidth, bool &sucess) {
   Mat topLeftOfFace = face(Rect(leftX, topY, widthX, heightY));
   Mat topRightOfFace = face(Rect(rightX, topY, widthX, heightY));
 
-  string lsLeftEye_haar = "/home/stremens/Cascades/haarcascade_mcs_lefteye_alt.xml";
-  string lsRightEye_haar = "/home/stremens/Cascades/haarcascade_mcs_righteye_alt.xml";
-  string lsBothEyes_haar = "/home/stremens/Cascades/haarcascade_eye.xml";
+  string lsLeftEye_haar = "/home/matheusm/Cascades/haarcascade_mcs_lefteye_alt.xml";
+  string lsRightEye_haar = "/home/matheusm/Cascades/haarcascade_mcs_righteye_alt.xml";
+  string lsBothEyes_haar = "/home/matheusm/Cascades/haarcascade_eye.xml";
 
   CascadeClassifier haar_cascade;
   haar_cascade.load(lsLeftEye_haar);
@@ -186,7 +185,7 @@ int main(int argc, const char *argv[]) {
         CV_Error(CV_StsError, error_message);
         exit(1);
     }
-
+    int contador = 0;
     for(int i=0; i < imagesFaces.size(); i++) {
     	Mat faceDesnormalizada = imagesFaces[i];
     	bool sucess = false;
@@ -194,7 +193,8 @@ int main(int argc, const char *argv[]) {
     	Mat faceNormalizada = faceNormalize(faceDesnormalizada, 200, sucess);
     	if(sucess) {
     		cout << "Sucess" << endl;
-    		imwrite("/home/stremens/FacesNormalizadas/"+labelsFaces[i]+".pgm", faceNormalizada);
+    		imwrite(format("/home/matheusm/Constantes/Normalizadas/%d.pgm", contador), faceNormalizada);
+    		contador++;
     	}
     }
 
