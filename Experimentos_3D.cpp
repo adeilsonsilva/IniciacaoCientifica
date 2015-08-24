@@ -261,7 +261,7 @@ void xyz2depth(CvPoint3D64f *pt, double *i, double *j, double *s, Mat xycords) {
     if(x == xy[1] && y == xy[0])
       break;
   }
-  //cout << p << endl;
+  cout << p << endl;
   *j = p / 512;
   *i = p / 424;
   *s = fabs(((pt->x+100.0)/z)*fx+cx-*j);
@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
       tmp[3] = j;
       r.push_back(tmp);
       k--;
-      /*avg.x = clist[0].x = list[0].x;
+      avg.x = clist[0].x = list[0].x;
       avg.y = clist[0].y = list[0].y;
       avg.z = clist[0].z = list[0].z;
       list[0].x = DBL_MAX;
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
           list[j].z = list[i].z;
           j++;
         }
-      k=j;*/
+      k=j;
     }
     for(int i=0; i < r.size(); i++)
       rectangle(depth_image, Point(r[i][0]-r[i][2],r[i][1]-r[i][2]), Point(r[i][0]+r[i][2],r[i][1]+r[i][2]), CV_RGB(0,255,0), 2, 8, 0);
