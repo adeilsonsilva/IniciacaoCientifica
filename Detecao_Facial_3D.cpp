@@ -1,30 +1,3 @@
-/*
- * This file is part of the OpenKinect Project. http://www.openkinect.org
- *
- * Copyright (c) 2011 individual OpenKinect contributors. See the CONTRIB file
- * for details.
- *
- * This code is licensed to you under the terms of the Apache License, version
- * 2.0, or, at your option, the terms of the GNU General Public License,
- * version 2.0. See the APACHE20 and GPL2 files for the text of the licenses,
- * or the following URLs:
- * http://www.apache.org/licenses/LICENSE-2.0
- * http://www.gnu.org/licenses/gpl-2.0.txt
- *
- * If you redistribute this file in source form, modified or unmodified, you
- * may:
- *   1) Leave this header intact and distribute it under the same terms,
- *      accompanying it with the APACHE20 and GPL20 files, or
- *   2) Delete the Apache 2.0 clause and accompany it with the GPL2 file, or
- *   3) Delete the GPL v2 clause and accompany it with the APACHE20 file
- * In all cases you must keep the copyright notice intact and include a copy
- * of the CONTRIB file.
- *
- * Binary distributions must follow the binary distribution requirements of
- * either License.
- */
-
-
 #include <iostream>
 #include <signal.h>
 
@@ -233,9 +206,7 @@ void compute_projection(IplImage *p, IplImage *m, CvPoint3D64f *xyz, int n, doub
         CV_IMAGE_ELEM(m, uchar, i, j) = 1;
     }
 }
-
-
-
+// paraemtros da camera do Kinect
 float fx;
 float fy;
 float cx;
@@ -245,34 +216,204 @@ float k2;
 float p1;
 float p2;
 float k3;
-
+//funcao que converte uma coordenada 3D em coordenada da imagem original
 void xyz2depth(CvPoint3D64f *pt, double *i, double *j, double *s, Mat xycords) {
   double z, x, y;
 
-  //z = -pt->z / (1000.0f);
   x = -(fx * pt->x)/pt->z + cx;
   y = (fy * pt->y)/pt->z - cy;
   *i = x;
   *j = y;
   *s = 20.0;
-  /*int p;
-  for(p = 0; p < 217088; p++) {
-    cv::Vec2f xy = xycords.at<cv::Vec2f>(0, p);
-    if(x == xy[1] && y == xy[0])
-    //if(abs(x-xy[1]) < 1.4 && abs(y-xy[0]) < 1.4)
-      break;
-  }
-  cout << p << endl;*/
-  //*j = p / 512;
-  //*i = p / 424;
-  //*s = fabs(((pt->x+100.0)/z)*fx+cx-*j);
-  //*s = 40.0;
-  
+  //formula que converte um pixel da imagem original em coordenada 3D
   /*cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
   x = xy[1]; y = xy[0];
   xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Converte metros pra mm
   xyz[i].x = -(x - cx) * xyz[i].z / fx;
   xyz[i].y = (y - cy) * xyz[i].z / fy;*/
+}
+
+vector<Vec4d> face_detection(Mat &amDepth) {
+  int liWidth = 512;
+  int liHeight = 424;
+  int liPwidth, liPheight;
+  static CvPoint3D64f *xyz, *list, *clist;
+  CvPoint3D64f avg;
+  static CvHaarClassifierCascade *face_cascade;
+  uint pixel_count = amDepth.rows * amDepth.cols;
+  double menorX = 999999.0, menorY = 999999.0, menor = 999999.0;
+  double maiorX = 0.0, maiorY = 0.0, maior = 0.0;
+  static IplImage *p, *m, *sum, *sqsum, *tiltedsum, *msum, *sumint, *tiltedsumint;;
+  static int width, height, cx, cy;
+  double matrix[3][3], imatrix[3][3], background, X, Y, Z;
+  float x = 0.0f, y = 0.0f;
+
+  liPwidth = (int)(X_WIDTH*RESOLUTION);
+  liPheight = (int)(X_WIDTH*RESOLUTION);
+
+  p = cvCreateImage(cvSize(liPwidth, liPheight), IPL_DEPTH_64F, 1);
+  m = cvCreateImage(cvSize(liPwidth, liPheight), IPL_DEPTH_8U, 1);
+
+  //inicializacao do sistema de coordenadas
+  cv::Mat cv_img_cords = cv::Mat(1, liWidth*liHeight, CV_32FC2);
+  Mat cv_img_corrected_cords;
+  for (int r = 0; r < liHeight; ++r) {
+      for (int c = 0; c < liWidth; ++c) {
+          cv_img_cords.at<cv::Vec2f>(0, r*liWidth + c) = cv::Vec2f((float)r, (float)c);
+      }
+  }
+
+  cv::Mat lmK = cv::Mat::eye(3, 3, CV_32F);
+  lmK.at<float>(0,0) = fx;
+  lmK.at<float>(1,1) = fy;
+  lmK.at<float>(0,2) = cx;
+  lmK.at<float>(1,2) = cy;
+
+  cv::Mat dist_coeffs = cv::Mat::zeros(1, 8, CV_32F);
+  dist_coeffs.at<float>(0,0) = k1;
+  dist_coeffs.at<float>(0,1) = k2;
+  dist_coeffs.at<float>(0,2) = p1;
+  dist_coeffs.at<float>(0,3) = p2;
+  dist_coeffs.at<float>(0,4) = k3;
+
+  cv::Mat new_camera_matrix = cv::getOptimalNewCameraMatrix(lmK, dist_coeffs, cv::Size2i(liHeight,liWidth), 0.0);
+  cv::undistortPoints(cv_img_cords, cv_img_corrected_cords, lmK, dist_coeffs, cv::noArray(), new_camera_matrix);
+  Mat xycords = cv_img_corrected_cords;
+  //inicializacao das variaveis da detecao
+  face_cascade = (CvHaarClassifierCascade *) cvLoad("/home/matheusm/Cascades/ALL_Spring2003_3D.xml", 0, 0, 0);
+  sum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
+  sqsum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
+  tiltedsum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
+  sumint = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
+  tiltedsumint = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
+  msum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
+
+  list = (CvPoint3D64f *) malloc(2000*sizeof(CvPoint3D64f));
+  clist = list+1000;
+  //conversao de profundidade para coordenadas em 3D na imagem inteira
+  xyz = (CvPoint3D64f *) malloc(SIZE*sizeof(CvPoint3D64f));
+  float* ptr = (float*) (amDepth.data);
+  for(uint i = 0; i < pixel_count; ++i)
+  {
+      cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
+      x = xy[1]; y = xy[0];
+      xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Converte metros pra mm
+      xyz[i].x = -(x - cx) * xyz[i].z / fx;
+      xyz[i].y = (y - cy) * xyz[i].z / fy;
+      ++ptr;
+      if(xyz[i].z < menor)
+        menor = xyz[i].z;
+  }
+  background = menor;
+  //calculo da imagem de projecao
+  computeRotationMatrix(matrix, imatrix, 0, 0, 0);
+  compute_projection(p, m, xyz, pixel_count, matrix, background);
+  menor = 999999.0; 
+  for(int i = 0; i < liPwidth; i++) {
+    for(int j = 0; j < liHeight; j++) {
+      double x = CV_IMAGE_ELEM(p, double, i, j);
+      if(x > maior)
+        maior = x;
+      if(x < menor && x != 0)
+        menor = x;
+    }
+  }
+  //visualizacao da imagem de projecao
+  #if 1
+  double a, b;
+  a = 255/(maior-menor);
+  b = 1 - (menor * a);
+  for(int i = 0; i < width; i++) {
+    for(int j = 0; j < height; j++) {
+      x = CV_IMAGE_ELEM(p, double, i, j);
+      if(x != 0)
+        CV_IMAGE_ELEM(p, double, i, j) = (x * a) + b;
+    }
+  }
+  Mat projecao= cv::cvarrToMat(p); 
+  
+  Mat1b lmX(projecao.rows, projecao.cols);
+  for(int i = 0; i < projecao.rows; i++)
+    for(int j = 0; j < projecao.cols; j++) 
+      lmX.at<uint8_t>(i, j) = projecao.at<double>(i, j);
+  Mat colored;
+  applyColorMap(lmX, colored, COLORMAP_JET);
+  cv::imshow("input original2", colored);
+  #endif
+  //detecao da face
+  cvIntegral(p, sum, sqsum, tiltedsum);
+  cvIntegral(m, msum, NULL, NULL);
+  int i, j, k = 0, l, n, aX, aY, aZ;
+  for(i=0; i < height+1; i++)
+    for(j=0; j < width+1; j++) {
+      CV_IMAGE_ELEM(sumint, int, i, j) = CV_IMAGE_ELEM(sum, double, i, j);
+      CV_IMAGE_ELEM(tiltedsumint, int, i, j) = CV_IMAGE_ELEM(tiltedsum, double, i, j);
+    }
+
+  cvSetImagesForHaarClassifierCascade(face_cascade, sumint, sqsum, tiltedsumint, 1.0);
+
+  for(i=0; i < height-20; i++)
+    for(j=0; j < width-20; j++)
+      if(CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j)+CV_IMAGE_ELEM(msum, int, i, j) == 441)
+        if(cvRunHaarClassifierCascade(face_cascade, cvPoint(j,i), 0) > 0) {
+          X = (j+FACE_HALF_SIZE-cx)/RESOLUTION;
+          Y = (cy-i-FACE_HALF_SIZE)/RESOLUTION;
+          Z = (CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE-5)+CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE-5))/121.0/RESOLUTION;
+
+          list[k].x = X*imatrix[0][0]+Y*imatrix[0][1]+Z*imatrix[0][2];
+          list[k].y = X*imatrix[1][0]+Y*imatrix[1][1]+Z*imatrix[1][2];
+          list[k].z = X*imatrix[2][0]+Y*imatrix[2][1]+Z*imatrix[2][2];
+          k++;
+        }
+  // Merge multiple detections
+  vector<Vec4d> r;
+  Vec4d tmp;
+  while(k > 0) {
+    avg.x = clist[0].x = list[0].x;
+    avg.y = clist[0].y = list[0].y;
+    avg.z = clist[0].z = list[0].z;
+    xyz2depth(&avg, &tmp[1], &tmp[0], &tmp[2], xycords);
+    tmp[3] = j;
+    r.push_back(tmp);
+    k--;
+    avg.x = clist[0].x = list[0].x;
+    avg.y = clist[0].y = list[0].y;
+    avg.z = clist[0].z = list[0].z;
+    list[0].x = DBL_MAX;
+
+    j=1;
+    for(l=0; l < j; l++)
+      for(i=1; i < k; i++)
+        if(list[i].x != DBL_MAX) {
+          X = sqrt(pow(list[i].x-clist[l].x, 2.0)+pow(list[i].y-clist[l].y, 2.0)+pow(list[i].z-clist[l].z, 2.0));
+          if(X < 50.0) {
+            avg.x += clist[j].x = list[i].x;
+            avg.y += clist[j].y = list[i].y;
+            avg.z += clist[j].z = list[i].z;
+            list[i].x = DBL_MAX;
+            j++;
+          }
+        }
+
+    avg.x /= j;
+    avg.y /= j;
+    avg.z /= j;
+
+    xyz2depth(&avg, &tmp[1], &tmp[0], &tmp[2], xycords);
+    tmp[3] = j;
+    r.push_back(tmp);
+
+    j=0;
+    for(i=1; i < k; i++)
+      if(list[i].x != DBL_MAX) {
+        list[j].x = list[i].x;
+        list[j].y = list[i].y;
+        list[j].z = list[i].z;
+        j++;
+      }
+    k=j;
+  }
+  return r;
 }
 
 int main(int argc, char *argv[])
@@ -356,7 +497,6 @@ int main(int argc, char *argv[])
 
   libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
   libfreenect2::FrameMap frames;
-  //libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
 
   dev->setColorFrameListener(&listener);
   dev->setIrAndDepthFrameListener(&listener);
@@ -365,7 +505,7 @@ int main(int argc, char *argv[])
   std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
   std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
 
-  libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
+  bool shutdown = true;
   //parametros da camera
    fx = dev->getIrCameraParams().fx;
    fy = dev->getIrCameraParams().fy;
@@ -377,226 +517,27 @@ int main(int argc, char *argv[])
    p2 = dev->getIrCameraParams().p2;
    k3 = dev->getIrCameraParams().k3;
 
-  int width = 512;
-  int height = 424;
-
-  cv::Mat cv_img_cords = cv::Mat(1, width*height, CV_32FC2);
-  Mat cv_img_corrected_cords;
-  for (int r = 0; r < height; ++r) {
-      for (int c = 0; c < width; ++c) {
-          cv_img_cords.at<cv::Vec2f>(0, r*width + c) = cv::Vec2f((float)r, (float)c);
-      }
-  }
-
-  cv::Mat k = cv::Mat::eye(3, 3, CV_32F);
-  k.at<float>(0,0) = fx;
-  k.at<float>(1,1) = fy;
-  k.at<float>(0,2) = cx;
-  k.at<float>(1,2) = cy;
-
-  cv::Mat dist_coeffs = cv::Mat::zeros(1, 8, CV_32F);
-  dist_coeffs.at<float>(0,0) = k1;
-  dist_coeffs.at<float>(0,1) = k2;
-  dist_coeffs.at<float>(0,2) = p1;
-  dist_coeffs.at<float>(0,3) = p2;
-  dist_coeffs.at<float>(0,4) = k3;
-
-  cv::Mat new_camera_matrix = cv::getOptimalNewCameraMatrix(k, dist_coeffs, cv::Size2i(height,width), 0.0);
-
-  cv::undistortPoints(cv_img_cords, cv_img_corrected_cords, k, dist_coeffs, cv::noArray(), new_camera_matrix);
-
-  Mat xycords = cv_img_corrected_cords;
-
-  float x = 0.0f, y = 0.0f;
-  bool shutdown = true;
-  vector<Vec4d> faces;
   while(!protonect_shutdown)
-  //while(shutdown)
   {
     listener.waitForNewFrame(frames);
-    libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
-    libfreenect2::Frame *ir = frames[libfreenect2::Frame::Ir];
     libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
 
-    Mat depth_image = cv::Mat(depth->height, depth->width, CV_32FC1, depth->data) / 4500.0f;
-    //cv::imshow("rgb", cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data));
-    //cv::imshow("ir", cv::Mat(ir->height, ir->width, CV_32FC1, ir->data) / 20000.0f);
-    static CvPoint3D64f *xyz, *list, *clist;
-    CvPoint3D64f avg;
-    xyz = (CvPoint3D64f *) malloc(SIZE*sizeof(CvPoint3D64f));
-    float* ptr = (float*) (depth_image.data);
-    static CvHaarClassifierCascade *face_cascade;
+    Mat lmDepth = cv::Mat(depth->height, depth->width, CV_32FC1, depth->data) / 4500.0f;
+    vector<Vec4d> faces;
 
-    uint pixel_count = depth_image.rows * depth_image.cols;
-    
-    double menorX = 999999.0, menorY = 999999.0, menor = 999999.0;
-    double maiorX = 0.0, maiorY = 0.0, maior = 0.0;
-    
-    for (uint i = 0; i < pixel_count; ++i)
-    {
-        cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
-        x = xy[1]; y = xy[0];
-        xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Converte metros pra mm
-        xyz[i].x = -(x - cx) * xyz[i].z / fx;
-        xyz[i].y = (y - cy) * xyz[i].z / fy;
-        ++ptr;
-        if(xyz[i].z < menor)
-          menor = xyz[i].z;
-    }
-
-    static IplImage *p, *m, *sum, *sqsum, *tiltedsum, *msum, *sumint, *tiltedsumint;;
-    static int width, height, cx, cy;
-    double matrix[3][3], imatrix[3][3], background, X, Y, Z;;
-    background = menor;
-    
-    width = (int)(X_WIDTH*RESOLUTION);
-    height = (int)(X_WIDTH*RESOLUTION);
-
-    p = cvCreateImage(cvSize(width, height), IPL_DEPTH_64F, 1);
-    m = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
-
-
-    computeRotationMatrix(matrix, imatrix, 0, 0, 0);
-    compute_projection(p, m, xyz, pixel_count, matrix, background);
-    menor = 999999.0; 
-    for(int i = 0; i < width; i++) {
-      for(int j = 0; j < height; j++) {
-        double x = CV_IMAGE_ELEM(p, double, i, j);
-        if(x > maior)
-          maior = x;
-        if(x < menor && x != 0)
-          menor = x;
-      }
-    }
-    #if 1
-    double a, b;
-    a = 255/(maior-menor);
-    b = 1 - (menor * a);
-    for(int i = 0; i < width; i++) {
-      for(int j = 0; j < height; j++) {
-        x = CV_IMAGE_ELEM(p, double, i, j);
-        if(x != 0)
-          CV_IMAGE_ELEM(p, double, i, j) = (x * a) + b;
-      }
-    }
-    Mat projecao= cv::cvarrToMat(p); 
-    
-    Mat1b x(projecao.rows, projecao.cols);
-    for(int i = 0; i < projecao.rows; i++)
-      for(int j = 0; j < projecao.cols; j++) 
-        x.at<uint8_t>(i, j) = projecao.at<double>(i, j);
-    Mat colored;
-    applyColorMap(x, colored, COLORMAP_JET);
-    cv::imshow("input original2", colored);
-    #endif
-
-    face_cascade = (CvHaarClassifierCascade *) cvLoad("/home/matheusm/Cascades/ALL_Spring2003_3D.xml", 0, 0, 0);
-    sum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
-    sqsum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
-    tiltedsum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
-    sumint = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
-    tiltedsumint = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
-    msum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_32S, 1);
-
-    list = (CvPoint3D64f *) malloc(2000*sizeof(CvPoint3D64f));
-    clist = list+1000;
-
-    cvIntegral(p, sum, sqsum, tiltedsum);
-    cvIntegral(m, msum, NULL, NULL);
-    int i, j, k = 0, l, n, aX, aY, aZ;
-    for(i=0; i < height+1; i++)
-      for(j=0; j < width+1; j++) {
-        CV_IMAGE_ELEM(sumint, int, i, j) = CV_IMAGE_ELEM(sum, double, i, j);
-        CV_IMAGE_ELEM(tiltedsumint, int, i, j) = CV_IMAGE_ELEM(tiltedsum, double, i, j);
-      }
-
-    cvSetImagesForHaarClassifierCascade(face_cascade, sumint, sqsum, tiltedsumint, 1.0);
-
-    for(i=0; i < height-20; i++)
-      for(j=0; j < width-20; j++)
-        if(CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j)+CV_IMAGE_ELEM(msum, int, i, j) == 441)
-          if(cvRunHaarClassifierCascade(face_cascade, cvPoint(j,i), 0) > 0) {
-            X = (j+FACE_HALF_SIZE-cx)/RESOLUTION;
-            Y = (cy-i-FACE_HALF_SIZE)/RESOLUTION;
-            Z = (CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE-5)+CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE-5))/121.0/RESOLUTION;
-
-            list[k].x = X*imatrix[0][0]+Y*imatrix[0][1]+Z*imatrix[0][2];
-            list[k].y = X*imatrix[1][0]+Y*imatrix[1][1]+Z*imatrix[1][2];
-            list[k].z = X*imatrix[2][0]+Y*imatrix[2][1]+Z*imatrix[2][2];
-            k++;
-          }
-    // Merge multiple detections
-    vector<Vec4d> r;
-    Vec4d tmp;
-    while(k > 0) {
-      avg.x = clist[0].x = list[0].x;
-      avg.y = clist[0].y = list[0].y;
-      avg.z = clist[0].z = list[0].z;
-      xyz2depth(&avg, &tmp[1], &tmp[0], &tmp[2], xycords);
-      tmp[3] = j;
-      r.push_back(tmp);
-      k--;
-      avg.x = clist[0].x = list[0].x;
-      avg.y = clist[0].y = list[0].y;
-      avg.z = clist[0].z = list[0].z;
-      list[0].x = DBL_MAX;
-
-      j=1;
-      for(l=0; l < j; l++)
-        for(i=1; i < k; i++)
-          if(list[i].x != DBL_MAX) {
-            X = sqrt(pow(list[i].x-clist[l].x, 2.0)+pow(list[i].y-clist[l].y, 2.0)+pow(list[i].z-clist[l].z, 2.0));
-            if(X < 50.0) {
-              avg.x += clist[j].x = list[i].x;
-              avg.y += clist[j].y = list[i].y;
-              avg.z += clist[j].z = list[i].z;
-              list[i].x = DBL_MAX;
-              j++;
-            }
-          }
-
-      avg.x /= j;
-      avg.y /= j;
-      avg.z /= j;
-
-      xyz2depth(&avg, &tmp[1], &tmp[0], &tmp[2], xycords);
-      tmp[3] = j;
-      r.push_back(tmp);
-
-      j=0;
-      for(i=1; i < k; i++)
-        if(list[i].x != DBL_MAX) {
-          list[j].x = list[i].x;
-          list[j].y = list[i].y;
-          list[j].z = list[i].z;
-          j++;
-        }
-      k=j;
-    }
-    for(int i=0; i < r.size(); i++)
-      rectangle(depth_image, Point(r[i][0]-r[i][2],r[i][1]-r[i][2]), Point(r[i][0]+r[i][2],r[i][1]+r[i][2]), CV_RGB(0,255,0), 2, 8, 0);
-    cv::imshow("input", depth_image);
-    //cv::imshow("projecao", projecao);
-
-    //registration->apply(rgb,depth,&undistorted,&registered);
-
-    //cv::imshow("undistorted", cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data) / 4500.0f);
-    //cv::imshow("registered", cv::Mat(registered.height, registered.width, CV_8UC4, registered.data));
-
+    faces = face_detection(lmDepth);
+    // BEGIN: Visualization
+    for(int i=0; i < faces.size(); i++)
+      rectangle(lmDepth, Point(faces[i][0]-faces[i][2],faces[i][1]-faces[i][2]), Point(faces[i][0]+faces[i][2],faces[i][1]+faces[i][2]), CV_RGB(0,255,0), 2, 8, 0);
+    // END: Visualization
+    cv::imshow("Input Original", lmDepth);
     int key = cv::waitKey(1);
     protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape
 
     listener.release(frames);
-    shutdown = false;
-    //libfreenect2::this_thread::sleep_for(libfreenect2::chrono::milliseconds(100));
   }
-
-  // TODO: restarting ir stream doesn't work!
-  // TODO: bad things will happen, if frame listeners are freed before dev->stop() :(
   dev->stop();
   dev->close();
-
-  delete registration;
 
   return 0;
 }
