@@ -66,8 +66,8 @@ const string PATH_CASCADE_FACE = "/home/matheusm/Cascades/ALL_Spring2003_3D.xml"
 #define DEPTH_CTHRESHOLD 675          // Maximum disparity value
 #define DEPTH_THRESHOLD 875         // Maximum disparity value
 // Detection parameters
-#define X_WIDTH 2800.0            // Orthogonal projection width - in mm
-#define Y_WIDTH 2600.0            // Orthogonal projection height - in mm
+#define X_WIDTH 1800.0            // Orthogonal projection width - in mm
+#define Y_WIDTH 1600.0            // Orthogonal projection height - in mm
 #define RESOLUTION 0.127272727        // Resolution in pixels per mm
 #define FACE_SIZE 21            // Face size - 165*RESOLUTION
 #define FACE_HALF_SIZE 10         // (165*RESOLUTION)/2
@@ -436,6 +436,7 @@ int main(int argc, char *argv[])
     {
         cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
         x = xy[1]; y = xy[0];
+        cout << x << " " << y << endl;
         xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Converte metros pra mm
         xyz[i].x = -(x - cx) * xyz[i].z / fx;
         xyz[i].y = (y - cy) * xyz[i].z / fy;
@@ -447,7 +448,7 @@ int main(int argc, char *argv[])
     static IplImage *p, *m, *sum, *sqsum, *tiltedsum, *msum, *sumint, *tiltedsumint;;
     static int width, height, cx, cy;
     double matrix[3][3], imatrix[3][3], background, X, Y, Z;;
-    background = menor;
+    background = menor + 100.0;
     
     width = (int)(X_WIDTH*RESOLUTION);
     height = (int)(X_WIDTH*RESOLUTION);
@@ -468,7 +469,7 @@ int main(int argc, char *argv[])
           menor = x;
       }
     }
-    #if 1
+    //#if 1
     double a, b;
     a = 255/(maior-menor);
     b = 1 - (menor * a);
@@ -487,8 +488,8 @@ int main(int argc, char *argv[])
         x.at<uint8_t>(i, j) = projecao.at<double>(i, j);
     Mat colored;
     applyColorMap(x, colored, COLORMAP_JET);
-    cv::imshow("input original2", colored);
-    #endif
+    
+    //#endif
 
     face_cascade = (CvHaarClassifierCascade *) cvLoad("/home/matheusm/Cascades/ALL_Spring2003_3D.xml", 0, 0, 0);
     sum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
@@ -516,6 +517,7 @@ int main(int argc, char *argv[])
       for(j=0; j < width-20; j++)
         if(CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j)+CV_IMAGE_ELEM(msum, int, i, j) == 441)
           if(cvRunHaarClassifierCascade(face_cascade, cvPoint(j,i), 0) > 0) {
+            rectangle(colored, Point(j, i), Point(j+20, i+20), CV_RGB(0,255,0));
             X = (j+FACE_HALF_SIZE-cx)/RESOLUTION;
             Y = (cy-i-FACE_HALF_SIZE)/RESOLUTION;
             Z = (CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE-5)+CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE-5))/121.0/RESOLUTION;
@@ -526,6 +528,7 @@ int main(int argc, char *argv[])
             k++;
           }
     // Merge multiple detections
+    cv::imshow("input original2", colored);
     vector<Vec4d> r;
     Vec4d tmp;
     while(k > 0) {
@@ -573,9 +576,9 @@ int main(int argc, char *argv[])
         }
       k=j;
     }
-    for(int i=0; i < r.size(); i++)
-      rectangle(depth_image, Point(r[i][0]-r[i][2],r[i][1]-r[i][2]), Point(r[i][0]+r[i][2],r[i][1]+r[i][2]), CV_RGB(0,255,0), 2, 8, 0);
-    cv::imshow("input", depth_image);
+    //for(int i=0; i < r.size(); i++)
+      //rectangle(depth_image, Point(r[i][0]-r[i][2],r[i][1]-r[i][2]), Point(r[i][0]+r[i][2],r[i][1]+r[i][2]), CV_RGB(0,255,0), 2, 8, 0);
+    //cv::imshow("input", depth_image);
     //cv::imshow("projecao", projecao);
 
     //registration->apply(rgb,depth,&undistorted,&registered);
@@ -583,7 +586,7 @@ int main(int argc, char *argv[])
     //cv::imshow("undistorted", cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data) / 4500.0f);
     //cv::imshow("registered", cv::Mat(registered.height, registered.width, CV_8UC4, registered.data));
 
-    int key = cv::waitKey(1);
+    int key = cv::waitKey(0);
     protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape
 
     listener.release(frames);
