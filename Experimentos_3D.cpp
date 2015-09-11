@@ -68,7 +68,7 @@ const string PATH_CASCADE_FACE = "/home/matheusm/Cascades/ALL_Spring2003_3D.xml"
 // Detection parameters
 #define X_WIDTH 1800.0            // Orthogonal projection width - in mm
 #define Y_WIDTH 1600.0            // Orthogonal projection height - in mm
-#define RESOLUTION 0.127272727        // Resolution in pixels per mm
+#define RESOLUTION 0.127272727        // Resolution in pixels per mm  0.127272727 
 #define FACE_SIZE 21            // Face size - 165*RESOLUTION
 #define FACE_HALF_SIZE 10         // (165*RESOLUTION)/2
 // Normalization parameters
@@ -141,18 +141,14 @@ void compute_projection(IplImage *p, IplImage *m, CvPoint3D64f *xyz, int n, doub
     cx = width/2;
     cy = height/2;
   }
-
   // Compute projection
   cvSet(p, cvRealScalar(-DBL_MAX), NULL);
   cvSet(m, cvRealScalar(0), NULL);
   for(i=0; i < n; i++) {
-    //cout << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
     j = cy-cvRound(xyz[i].x*matrix[1][0]+xyz[i].y*matrix[1][1]+xyz[i].z*matrix[1][2]);
     k = cx+cvRound(xyz[i].x*matrix[0][0]+xyz[i].y*matrix[0][1]+xyz[i].z*matrix[0][2]);
     d = xyz[i].x*matrix[2][0]+xyz[i].y*matrix[2][1]+xyz[i].z*matrix[2][2];
     //cout << j << " " << k << endl;
-    
-    //cout << d << endl;
 
     if(j >= 0 && k >= 0 && j < height && k < width && d > CV_IMAGE_ELEM(p, double, j, k)) {
       CV_IMAGE_ELEM(p, double, j, k) = d;
@@ -246,25 +242,34 @@ float p1;
 float p2;
 float k3;
 
-void xyz2depth(CvPoint3D64f *pt, double *i, double *j, double *s, Mat xycords) {
-  double z, x, y;
-
+void xyz2depth(CvPoint3D64f *pt, int *i, int *j, int *s, Mat xycords) {
+  float x, y;
+  //cout << "-----Entering Debug Mode------" << endl;
+  //cout <<  "Ponto da face em xyz: [" << pt->x << ", " << pt->y << "]" << endl;
   //z = -pt->z / (1000.0f);
-  x = -(fx * pt->x)/pt->z + cx;
-  y = (fy * pt->y)/pt->z - cy;
-  *i = x;
-  *j = y;
-  *s = 20.0;
-  /*int p;
+  x = (fx * pt->x)/pt->z + cx;
+  y = -(fy * pt->y)/pt->z + cy;
+  //cout << "Ponto nas coordenadas undistort ["<< x << ", " << y << "]" << endl;
+  *s = 50.0;
+  int p;
   for(p = 0; p < 217088; p++) {
     cv::Vec2f xy = xycords.at<cv::Vec2f>(0, p);
-    if(x == xy[1] && y == xy[0])
-    //if(abs(x-xy[1]) < 1.4 && abs(y-xy[0]) < 1.4)
+    /*if(cvRound(x) == cvRound(xy[1]))
+      cout << "Ponto compativel com X: " << xy[1] << endl;
+    if(cvRound(y) == cvRound(xy[0]))
+      cout << "Ponto compativel com Y: " << xy[0] << endl;*/
+    //if(x == xy[1] && y == xy[0])
+    if(fabs(x - xy[1]) < 0.9 && fabs(y - xy[0]) < 0.9)
       break;
   }
-  cout << p << endl;*/
-  //*j = p / 512;
-  //*i = p / 424;
+  if(p < 512) {
+    *i = 0;
+    *j = p;
+  }
+  else {
+    *i = p / 512;
+    *j = p % 512;
+  }
   //*s = fabs(((pt->x+100.0)/z)*fx+cx-*j);
   //*s = 40.0;
   
@@ -436,7 +441,6 @@ int main(int argc, char *argv[])
     {
         cv::Vec2f xy = xycords.at<cv::Vec2f>(0, i);
         x = xy[1]; y = xy[0];
-        cout << x << " " << y << endl;
         xyz[i].z = -(static_cast<float>(*ptr)) * (1000.0f); // Converte metros pra mm
         xyz[i].x = -(x - cx) * xyz[i].z / fx;
         xyz[i].y = (y - cy) * xyz[i].z / fy;
@@ -446,12 +450,15 @@ int main(int argc, char *argv[])
     }
 
     static IplImage *p, *m, *sum, *sqsum, *tiltedsum, *msum, *sumint, *tiltedsumint;;
-    static int width, height, cx, cy;
+    static int width, height, CX, CY;
     double matrix[3][3], imatrix[3][3], background, X, Y, Z;;
     background = menor + 100.0;
     
     width = (int)(X_WIDTH*RESOLUTION);
     height = (int)(X_WIDTH*RESOLUTION);
+
+    CX = width/2;
+    CY = height/2;
 
     p = cvCreateImage(cvSize(width, height), IPL_DEPTH_64F, 1);
     m = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
@@ -469,7 +476,7 @@ int main(int argc, char *argv[])
           menor = x;
       }
     }
-    //#if 1
+    #if 1
     double a, b;
     a = 255/(maior-menor);
     b = 1 - (menor * a);
@@ -489,7 +496,7 @@ int main(int argc, char *argv[])
     Mat colored;
     applyColorMap(x, colored, COLORMAP_JET);
     
-    //#endif
+    #endif
 
     face_cascade = (CvHaarClassifierCascade *) cvLoad("/home/matheusm/Cascades/ALL_Spring2003_3D.xml", 0, 0, 0);
     sum = cvCreateImage(cvSize(width+1, height+1), IPL_DEPTH_64F, 1);
@@ -517,9 +524,10 @@ int main(int argc, char *argv[])
       for(j=0; j < width-20; j++)
         if(CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i, j+FACE_SIZE)-CV_IMAGE_ELEM(msum, int, i+FACE_SIZE, j)+CV_IMAGE_ELEM(msum, int, i, j) == 441)
           if(cvRunHaarClassifierCascade(face_cascade, cvPoint(j,i), 0) > 0) {
-            rectangle(colored, Point(j, i), Point(j+20, i+20), CV_RGB(0,255,0));
-            X = (j+FACE_HALF_SIZE-cx)/RESOLUTION;
-            Y = (cy-i-FACE_HALF_SIZE)/RESOLUTION;
+            rectangle(colored, Point(j, i), Point(j+21, i+21), CV_RGB(0,255,0));
+            X = (j+FACE_HALF_SIZE-CX)/RESOLUTION;
+            Y = (CY-i-FACE_HALF_SIZE)/RESOLUTION;
+            //cout << X << " " << Y << endl;
             Z = (CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE+6)-CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE+6, j+FACE_HALF_SIZE-5)+CV_IMAGE_ELEM(sum, double, i+FACE_HALF_SIZE-5, j+FACE_HALF_SIZE-5))/121.0/RESOLUTION;
 
             list[k].x = X*imatrix[0][0]+Y*imatrix[0][1]+Z*imatrix[0][2];
@@ -528,22 +536,20 @@ int main(int argc, char *argv[])
             k++;
           }
     // Merge multiple detections
-    cv::imshow("input original2", colored);
-    vector<Vec4d> r;
-    Vec4d tmp;
+    cv::imshow("Imagem de Projecao", colored);
+    vector<Vec4i> r;
+    Vec4i tmp;
+
     while(k > 0) {
       avg.x = clist[0].x = list[0].x;
       avg.y = clist[0].y = list[0].y;
       avg.z = clist[0].z = list[0].z;
-      xyz2depth(&avg, &tmp[1], &tmp[0], &tmp[2], xycords);
-      tmp[3] = j;
-      r.push_back(tmp);
-      k--;
-      avg.x = clist[0].x = list[0].x;
-      avg.y = clist[0].y = list[0].y;
-      avg.z = clist[0].z = list[0].z;
       list[0].x = DBL_MAX;
-
+      //cout << avg.x << " " << avg.y << endl;
+      /*for(int f = 0; f < pixel_count; f++) {
+        if(fabs(xyz[f].x - avg.x) < 0.9 && fabs(xyz[f].y - avg.y) < 0.9)
+          cout << "************PONTO ENCONTRADO******************" << endl;
+      }*/
       j=1;
       for(l=0; l < j; l++)
         for(i=1; i < k; i++)
@@ -562,6 +568,8 @@ int main(int argc, char *argv[])
       avg.y /= j;
       avg.z /= j;
 
+      
+
       xyz2depth(&avg, &tmp[1], &tmp[0], &tmp[2], xycords);
       tmp[3] = j;
       r.push_back(tmp);
@@ -576,9 +584,9 @@ int main(int argc, char *argv[])
         }
       k=j;
     }
-    //for(int i=0; i < r.size(); i++)
-      //rectangle(depth_image, Point(r[i][0]-r[i][2],r[i][1]-r[i][2]), Point(r[i][0]+r[i][2],r[i][1]+r[i][2]), CV_RGB(0,255,0), 2, 8, 0);
-    //cv::imshow("input", depth_image);
+    for(int i=0; i < r.size(); i++)
+      rectangle(depth_image, Point(r[i][0]-r[i][2],r[i][1]-r[i][2]), Point(r[i][0]+r[i][2],r[i][1]+r[i][2]), CV_RGB(0,255,0), 2, 8, 0);
+    cv::imshow("Detecao Facial 3D", depth_image);
     //cv::imshow("projecao", projecao);
 
     //registration->apply(rgb,depth,&undistorted,&registered);
@@ -586,7 +594,7 @@ int main(int argc, char *argv[])
     //cv::imshow("undistorted", cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data) / 4500.0f);
     //cv::imshow("registered", cv::Mat(registered.height, registered.width, CV_8UC4, registered.data));
 
-    int key = cv::waitKey(0);
+    int key = cv::waitKey(1);
     protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape
 
     listener.release(frames);
