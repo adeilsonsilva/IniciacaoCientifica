@@ -1,0 +1,458 @@
+/* layout */
+/*body {
+  background:#3F3;
+  font-family:sans-serif;
+}*/
+#wrapper {
+  width:260px;
+	margin:100px auto;
+}
+
+/* general item styles */
+.digit {
+	position:relative;
+	float:left;
+	width:30px;
+	height:40px;
+	box-shadow:0 0 4px rgba(0,0,0,.5);
+	margin:0 4px;
+}
+.particle {
+	position:absolute;
+	background:#f00;
+	box-shadow:0 0 5px #f00;
+}
+.separator {
+	position:relative;
+	float:left;
+	width:8px;
+	margin:0 4px;
+}
+.dot {
+	width:8px;
+	height:8px;
+	background:#f00;
+	box-shadow:0 0 5px #f00;
+	border-radius:4px;
+}
+input {
+	display:none;
+}
+label, label:before, #fakeStop {
+	display:block;
+	position:absolute;
+	margin:3px 0 0 -50px;
+	padding:1px 3px;
+	background:#f00;
+	border-radius:2px;
+	width:32px;
+	font-size:9px;
+	cursor:pointer;
+}
+#fakeStop {
+	cursor:default;
+	opacity:.4;
+}
+label:before {
+	content:attr(data-title);
+	margin:-1px 0 0 -3px;
+}
+label[for=button2], #fakeStop {
+	margin-top:24px;
+}
+label[for=button2], label:before,
+#button1:checked ~ #fakeStop {
+	display:none;
+}
+#button2:checked ~ label[for=button2] {
+	margin-top:3px;
+}
+#button1:checked ~ label[for=button1]:before,
+#button1:checked ~ label[for=button2],
+#button2:checked ~ label[for=button2]:before,
+#button1:checked ~ #button2:checked ~ #fakeStop {
+	display:block;
+}
+
+/* positioning & dimensions */
+.top {
+	top:0;
+}
+.bottom {
+	bottom:0;
+}
+.left {
+	left:0;
+}
+.right {
+	right:0;
+}
+.middle {
+	top:17px;
+}
+.particle.top, .particle.middle, .particle.bottom {
+	width:14px;
+	height:5px;
+	margin:0 0 0 8px;
+}
+.particle.middle {
+	height:6px;
+}
+.particle.right, .particle.left {
+	width:5px;
+	height:8px;
+	margin:7px 0 0 0;
+}
+.particle.bottom.right, .particle.bottom.left {
+	margin:0 0 7px 0;
+}
+.dot.top {
+	margin-top:8px;
+}
+.dot.bottom {
+	margin-top:8px;
+}
+
+/* corners */
+.particle:before, .particle:after {
+	content:'';
+	position:absolute;
+	z-index:2;
+	display:block;
+	width: 0px;
+	height: 0px;
+	border-style: solid;
+}
+.particle.top:before {
+	margin:0 0 0 -5px;
+	border-width: 0 5px 5px 0;
+	border-color: transparent #f00 transparent transparent;
+}
+.particle.top:after {
+	margin:0 0 0 14px;
+	border-width: 5px 5px 0 0;
+	border-color: #f00 transparent transparent transparent;
+}
+.particle.top.right:before {
+	margin:-5px 0 0 0;
+	border-width: 0 0 5px 5px;
+	border-color: transparent transparent #f00 transparent;
+}
+.particle.top.right:after {
+	margin:8px 0 0 0;
+	border-width: 0 5px 3px 0;
+	border-color: transparent #f00 transparent transparent;
+}
+.particle.top.left:before {
+	margin:-5px 0 0 0;
+	border-width: 5px 0 0 5px;
+	border-color: transparent transparent transparent #f00;
+}
+.particle.top.left:after {
+	margin:8px 0 0 0;
+	border-width: 3px 5px 0 0;
+	border-color: #f00 transparent transparent transparent;
+}
+.particle.middle:before {
+	margin:0 0 0 -5px;
+	border-width: 3px 5px 3px 0;
+	border-color: transparent #f00 transparent transparent;
+}
+.particle.middle:after {
+	margin:0 0 0 14px;
+	border-width: 3px 0 3px 5px;
+	border-color: transparent transparent transparent #f00;
+}
+.particle.bottom.right:before {
+	margin:-3px 0 0 0;
+	border-width: 0 0 3px 5px;
+	border-color: transparent transparent #f00 transparent;
+}
+.particle.bottom.right:after {
+	margin:8px 0 0 0;
+	border-width: 0 5px 5px 0;
+	border-color: transparent #f00 transparent transparent;
+}
+.particle.bottom.left:before {
+	margin:-3px 0 0 0;
+	border-width: 3px 0 0 5px;
+	border-color: transparent transparent transparent #f00;
+}
+.particle.bottom.left:after {
+	margin:8px 0 0 0;
+	border-width: 5px 5px 0 0;
+	border-color: #f00 transparent transparent transparent;
+}
+.particle.bottom:before {
+	margin:0 0 0 -5px;
+	border-width: 0 0 5px 5px;
+	border-color: transparent transparent #f00 transparent;
+}
+.particle.bottom:after {
+	margin:0 0 0 14px;
+	border-width: 5px 0 0 5px;
+	border-color: transparent transparent transparent #f00;
+}
+
+/* animations */
+@keyframes initial-visible {
+	0% {opacity:1;}
+	100% {opacity:1;}
+}
+
+@keyframes initial-hidden {
+	0% {opacity:.1;}
+	100% {opacity:.1;}
+}
+
+@keyframes flash {
+	0% {opacity:1;}
+	49.999% {opacity:1;}
+	50% {opacity:.1;}
+	100% {opacity:.1;}
+}
+
+@keyframes top-10 {
+	0% {opacity:1;}
+	9.999% {opacity:1;}
+	10% {opacity:.1;}
+	19.999% {opacity:.1;}
+	20% {opacity:1;}
+	30% {opacity:1;}
+	39.999% {opacity:1;}
+	40% {opacity:.1;}
+	49.999% {opacity:.1;}
+	50% {opacity:1;}
+	60% {opacity:1;}
+	70% {opacity:1;}
+	80% {opacity:1;}
+	90% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes top-right-10 {
+	0% {opacity:1;}
+	10% {opacity:1;}
+	20% {opacity:1;}
+	30% {opacity:1;}
+	40% {opacity:1;}
+	49.999% {opacity:1;}
+	50% {opacity:.1;}
+	60% {opacity:.1;}
+	69.999% {opacity:.1;}
+	70% {opacity:1;}
+	80% {opacity:1;}
+	90% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes top-left-10 {
+	0% {opacity:1;}
+	9.999% {opacity:1;}
+	10% {opacity:.1;}
+	20% {opacity:.1;}
+	30% {opacity:.1;}
+	39.999% {opacity:.1;}
+	40% {opacity:1;}
+	50% {opacity:1;}
+	60% {opacity:1;}
+	69.999% {opacity:1;}
+	70% {opacity:.1;}
+	79.999% {opacity:.1;}
+	80% {opacity:1;}
+	90% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes middle-10 {
+	0% {opacity:.1;}
+	10% {opacity:.1;}
+	19.999% {opacity:.1;}
+	20% {opacity:1;}
+	30% {opacity:1;}
+	40% {opacity:1;}
+	50% {opacity:1;}
+	60% {opacity:1;}
+	69.999% {opacity:1;}
+	70% {opacity:.1;}
+	79.999% {opacity:.1;}
+	80% {opacity:1;}
+	90% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes bottom-right-10 {
+	0% {opacity:1;}
+	10% {opacity:1;}
+	19.999% {opacity:1;}
+	20% {opacity:.1;}
+	29.999% {opacity:.1;}
+	30% {opacity:1;}
+	40% {opacity:1;}
+	50% {opacity:1;}
+	60% {opacity:1;}
+	70% {opacity:1;}
+	80% {opacity:1;}
+	90% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes bottom-left-10 {
+	0% {opacity:1;}
+	9.999% {opacity:1;}
+	10% {opacity:.1;}
+	19.999% {opacity:.1;}
+	20% {opacity:1;}
+	29.999% {opacity:1;}
+	30% {opacity:.1;}
+	40% {opacity:.1;}
+	50% {opacity:.1;}
+	59.999% {opacity:.1;}
+	60% {opacity:1;}
+	69.999% {opacity:1;}
+	70% {opacity:.1;}
+	79.999% {opacity:.1;}
+	80% {opacity:1;}
+	89.999% {opacity:1;}
+	90% {opacity:.1;}
+	100% {opacity:.1;}
+}
+@keyframes bottom-10 {
+	0% {opacity:1;}
+	9.999% {opacity:1;}
+	10% {opacity:.1;}
+	19.999% {opacity:.1;}
+	20% {opacity:1;}
+	30% {opacity:1;}
+	39.999% {opacity:1;}
+	40% {opacity:.1;}
+	49.999% {opacity:.1;}
+	50% {opacity:1;}
+	60% {opacity:1;}
+	69.999% {opacity:1;}
+	70% {opacity:.1;}
+	79.999% {opacity:.1;}
+	80% {opacity:1;}
+	90% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes top-6 {
+	0% {opacity:1;}
+	16.665% {opacity:1;}
+	16.666% {opacity:.1;}
+	33.332% {opacity:.1;}
+	33.333% {opacity:1;}
+	50% {opacity:1;}
+	66.665% {opacity:1;}
+	66.666% {opacity:.1;}
+	83.332% {opacity:.1;}
+	83.333% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes top-right-6 {
+	0% {opacity:1;}
+	16.666% {opacity:1;}
+	33.333% {opacity:1;}
+	50% {opacity:1;}
+	66.666% {opacity:1;}
+	83.332% {opacity:1;}
+	83.333% {opacity:.1;}
+	100% {opacity:.1;}
+}
+@keyframes top-left-6 {
+	0% {opacity:1;}
+	16.665% {opacity:1;}
+	16.666% {opacity:.1;}
+	33.333% {opacity:.1;}
+	50% {opacity:.1;}
+	66.665% {opacity:.1;}
+	66.666% {opacity:1;}
+	83.333% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes middle-6 {
+	0% {opacity:.1;}
+	16.666% {opacity:.1;}
+	33.332% {opacity:.1;}
+	33.333% {opacity:1;}
+	50% {opacity:1;}
+	66.666% {opacity:1;}
+	83.333% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes bottom-right-6 {
+	0% {opacity:1;}
+	16.666% {opacity:1;}
+	33.332% {opacity:1;}
+	33.333% {opacity:.1;}
+	49.999% {opacity:.1;}
+	50% {opacity:1;}
+	66.666% {opacity:1;}
+	83.333% {opacity:1;}
+	100% {opacity:1;}
+}
+@keyframes bottom-left-6 {
+	0% {opacity:1;}
+	16.665% {opacity:1;}
+	16.666% {opacity:.1;}
+	33.332% {opacity:.1;}
+	33.333% {opacity:1;}
+	49.999% {opacity:1;}
+	50% {opacity:.1;}
+	66.666% {opacity:.1;}
+	83.333% {opacity:.1;}
+	100% {opacity:.1;}
+}
+@keyframes bottom-6 {
+	0% {opacity:1;}
+	16.665% {opacity:1;}
+	16.666% {opacity:.1;}
+	33.332% {opacity:.1;}
+	33.333% {opacity:1;}
+	50% {opacity:1;}
+	66.665% {opacity:1;}
+	66.666% {opacity:.1;}
+	83.332% {opacity:.1;}
+	83.333% {opacity:1;}
+	100% {opacity:1;}
+}
+
+.particle, .separator {
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+	animation-play-state: paused;
+}
+.particle.top { animation-name: top-10; }
+.particle.top.right { animation-name: top-right-10; }
+.particle.top.left { animation-name: top-left-10; }
+.particle.middle { animation-name: middle-10; }
+.particle.bottom.right { animation-name: bottom-right-10; }
+.particle.bottom.left { animation-name: bottom-left-10; }
+.particle.bottom { animation-name: bottom-10; }
+
+.d6 .particle.top { animation-name: top-6; }
+.d6 .particle.top.right { animation-name: top-right-6; }
+.d6 .particle.top.left { animation-name: top-left-6; }
+.d6 .particle.middle { animation-name: middle-6; }
+.d6 .particle.bottom.right { animation-name: bottom-right-6; }
+.d6 .particle.bottom.left { animation-name: bottom-left-6; }
+.d6 .particle.bottom { animation-name: bottom-6; }
+
+.dp1 .particle { animation-duration: .1s; }
+.dp10 .particle { animation-duration: 1s; }
+.dp100 .particle { animation-duration: 10s; }
+.dp1000 .particle { animation-duration: 60s; }
+.dp10000 .particle { animation-duration: 600s; }
+.dp100000 .particle { animation-duration: 3600s; }
+
+.separator {
+	animation-name: flash;
+	animation-duration: 1s;
+}
+
+#button1:checked ~ .digit .particle,
+#button1:checked ~ .separator {
+	animation-play-state: running;
+}
+#button2:checked ~ .digit .particle,
+#button2:checked ~ .separator {
+	animation-name: initial-visible;
+}
+#button2:checked ~ .digit .particle.middle {
+	animation-name: initial-hidden;
+}

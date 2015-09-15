@@ -24,6 +24,7 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+    <link href="cronometro.css" rel="stylesheet" type="text/css">
 
 </head>
 <body id="page-top" onload="sortearAtvidades();" class="index">
@@ -109,7 +110,7 @@
                     <p class="text-center">Atividade 2</p>
                 </div>
                 <div class="col-sm-4 portfolio-item">
-                    <a id="atividade3" href="#portfolioModal3" class="portfolio-link" data-toggle="modal">
+                    <a id="atividade3" href="#portfolioModal3" class="portfolio-link" data-toggle="modal" >
                         <div class="caption">
                             <div class="caption-content">
                                 <i class="fa fa-search-plus fa-3x"></i>
@@ -120,36 +121,8 @@
                     </a>
                     <p class="text-center">Atividade 3</p>
                 </div>
-                <div style="display: none;" class="col-sm-4 portfolio-item">
-                    <a href="#portfolioModal4" class="portfolio-link" data-toggle="modal">
-                        <div class="caption">
-                            <div class="caption-content">
-                                <i class="fa fa-search-plus fa-3x"></i>
-                            </div>
-                        </div>
-                        <img src="img/portfolio/game.png" class="img-responsive" alt="">
-                    </a>
-                </div>
-                <div style="display: none;" class="col-sm-4 portfolio-item">
-                    <a href="#portfolioModal5" class="portfolio-link" data-toggle="modal">
-                        <div class="caption">
-                            <div class="caption-content">
-                                <i class="fa fa-search-plus fa-3x"></i>
-                            </div>
-                        </div>
-                        <img src="img/portfolio/safe.png" class="img-responsive" alt="">
-                    </a>
-                </div>
-                <div style="display: none;" class="col-sm-4 portfolio-item">
-                    <a href="#portfolioModal6" class="portfolio-link" data-toggle="modal">
-                        <div class="caption">
-                            <div class="caption-content">
-                                <i class="fa fa-search-plus fa-3x"></i>
-                            </div>
-                        </div>
-                        <img src="img/portfolio/submarine.png" class="img-responsive" alt="">
-                    </a>
-                </div>
+                
+                
             </div>
         </div>
     </section>
@@ -211,7 +184,7 @@
                             <hr class="star-primary">
                             <iframe width="560" height="315" src="https://www.youtube.com/embed/0XoXjHkpzcE" frameborder="0" allowfullscreen></iframe>
                             <p>Veja esse vídeo do Canal Canalha que é muito engraçado</p>
-                            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Concluir</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal" onclick="desativarAtividade('portfolioModal1')"><i class="fa fa-times"></i> Concluir</button>
                         </div>
                     </div>
                 </div>
@@ -235,7 +208,7 @@
                             <p>Digite rápido no 10fastfingers tanto em inglês quanto em português</p>
                             <p><a href="http://10fastfingers.com/typing-test/english" target="_blank">Texto em Ingles</a></p>
                             <p><a href="http://10fastfingers.com/typing-test/portuguese" target="_blank">Texto em Portugues</a></p>
-                            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Concluir</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal" onclick="desativarAtividade('portfolioModal2')"><i class="fa fa-times" ></i> Concluir</button>
                         </div>
                     </div>
                 </div>
@@ -259,7 +232,76 @@
                             <object width="550px" height="400px" border="0"><param name="content" value="http://www.snubbyland.com/content/games/14.swf"><embed src="http://www.snubbyland.com/content/games/14.swf" width="550px" height="400px" border="0"></embed></object>
                             <p>Mostre suas habilidades nesse joguinho bem fácil... Cuidado pra não clicar em spam</p>
                             <p>Este jogo fechará após 3 minutos. Após isso a atividade estará concluída</p>
-                            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Concluir</button>
+                            <div id="wrapper">
+                              <input type="checkbox" id="button1" checked>
+                              <!-- <label for="button1" data-title="PAUSE">PLAY</label> -->
+                              <input type="checkbox" id="button2">
+                              <!-- <label for="button2" data-title="PLAY">STOP</label> -->
+                              <!-- <span id="fakeStop">STOP</span> -->
+                              <div class="digit dp100000 d6">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="digit dp10000">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="separator">
+                                <div class="dot top"></div>
+                                <div class="dot bottom"></div>
+                              </div>
+                              <div class="digit dp1000 d6">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="digit dp100">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="separator">
+                                <div class="dot top"></div>
+                                <div class="dot bottom"></div>
+                              </div>
+                              <div class="digit dp10">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="digit dp1">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                            </div>
+                            <!-- <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Concluir</button> -->
                         </div>
                     </div>
                 </div>
@@ -287,7 +329,76 @@
                             </object><br>
                             <p>Jogo simples que não exige tanta concentração assim. Relaxe.</p>
                             <p>Este jogo fechará após 3 minutos. Após isso a atividade estará concluída</p>
-                            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Concluir</button>
+                            <div id="wrapper">
+                              <input type="checkbox" id="button1" checked>
+                              <!-- <label for="button1" data-title="PAUSE">PLAY</label> -->
+                              <input type="checkbox" id="button2">
+                              <!-- label for="button2" data-title="PLAY">STOP</label>
+                              <span id="fakeStop">STOP</span> -->
+                              <div class="digit dp100000 d6">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="digit dp10000">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="separator">
+                                <div class="dot top"></div>
+                                <div class="dot bottom"></div>
+                              </div>
+                              <div class="digit dp1000 d6">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="digit dp100">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="separator">
+                                <div class="dot top"></div>
+                                <div class="dot bottom"></div>
+                              </div>
+                              <div class="digit dp10">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                              <div class="digit dp1">
+                                <div class="particle top"></div>
+                                <div class="particle top right"></div>
+                                <div class="particle top left"></div>
+                                <div class="particle middle"></div>
+                                <div class="particle bottom right"></div>
+                                <div class="particle bottom left"></div>
+                                <div class="particle bottom"></div>
+                              </div>
+                            </div>
+                            <!-- <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Concluir</button> -->
                         </div>
                     </div>
                 </div>
@@ -310,7 +421,7 @@
                             <hr class="star-primary">
                             <iframe width="560" height="315" src="https://www.youtube.com/embed/OmWrq7hjta4" frameborder="0" allowfullscreen></iframe>
                             <p>Imite tudo que esse cara faz no vídeo. Só não vale dar risada.</p>
-                            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Concluir</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal" onclick="desativarAtividade('portfolioModal5')"><i class="fa fa-times" ></i> Concluir</button>
                         </div>
                     </div>
                 </div>
@@ -333,7 +444,7 @@
                             <hr class="star-primary">
                             <p class="text-justify">O que temos que ter sempre em mente é que a consulta aos diversos militantes ainda não demonstrou convincentemente que vai participar na mudança do remanejamento dos quadros funcionais. A nível organizacional, a determinação clara de objetivos não pode mais se dissociar de todos os recursos funcionais envolvidos. Todas estas questões, devidamente ponderadas, levantam dúvidas sobre se o desafiador cenário globalizado faz parte de um processo de gerenciamento do retorno esperado a longo prazo. Não obstante, a revolução dos costumes causa impacto indireto na reavaliação do sistema de formação de quadros que corresponde às necessidades. Gostaria de enfatizar que a competitividade nas transações comerciais representa uma abertura para a melhoria da gestão inovadora da qual fazemos parte.</p>
                             <p class="text-justify">Desta maneira, o comprometimento entre as equipes garante a contribuição de um grupo importante na determinação do processo de comunicação como um todo. Pensando mais a longo prazo, o novo modelo estrutural aqui preconizado auxilia a preparação e a composição dos índices pretendidos. É claro que o desenvolvimento contínuo de distintas formas de atuação promove a alavancagem das posturas dos órgãos dirigentes com relação às suas atribuições. No entanto, não podemos esquecer que o julgamento imparcial das eventualidades pode nos levar a considerar a reestruturação das diversas correntes de pensamento. Do mesmo modo, o entendimento das metas propostas é uma das consequências dos níveis de motivação departamental.</p>
-                            <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Concluir</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal" onclick="desativarAtividade('portfolioModal6')"><i class="fa fa-times" ></i> Concluir</button>
                         </div>
                     </div>
                 </div>
