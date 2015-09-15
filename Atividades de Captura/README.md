@@ -1,25 +1,7 @@
-# [Start Bootstrap](http://startbootstrap.com/) - [Freelancer](http://startbootstrap.com/template-overviews/freelancer/)
+# [Página de Captura][Atividades]
 
-[Freelancer](http://startbootstrap.com/template-overviews/freelancer/) is a one page freelancer portfolio theme for [Bootstrap](http://getbootstrap.com/) created by [Start Bootstrap](http://startbootstrap.com/). This theme features several content sections, a responsive portfolio grid with hover effects, full page portfolio item modals, and a working PHP contact form.
-
-## Getting Started
-
-To use this theme, choose one of the following options to get started:
-* Download the latest release on Start Bootstrap
-* Fork this repository on GitHub
-
-## Bugs and Issues
-
-Have a bug or an issue with this theme? [Open a new issue](https://github.com/IronSummitMedia/startbootstrap-freelancer/issues) here on GitHub or leave a comment on the [template overview page at Start Bootstrap](http://startbootstrap.com/template-overviews/freelancer/).
-
-## Creator
-
-Start Bootstrap was created by and is maintained by **David Miller**, Managing Parter at [Iron Summit Media Strategies](http://www.ironsummitmedia.com/).
-
-* https://twitter.com/davidmillerskt
-* https://github.com/davidtmiller
-
-Start Bootstrap is based on the [Bootstrap](http://getbootstrap.com/) framework created by [Mark Otto](https://twitter.com/mdo) and [Jacob Thorton](https://twitter.com/fat).
+É muito simples adicionar novas atividades. Basta criar um novo modal, com um novo id na sequência id="portfolioModalX" (copia e cola de um modal já existente).
+Depois é só ir no javascript random.js e onde tem [var randomnumber=Math.floor(Math.random()*6 + 1);] tirar o 6 e por o nova quantidade de modais existentes.
 
 ## Copyright and License
 
