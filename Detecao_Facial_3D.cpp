@@ -570,9 +570,21 @@ int main(int argc, char *argv[])
 
     vector<Vec4i> faces;
     faces = frontal_face_detection(depth_image, xycords);
+
+    double min;
+    double max;
+    cv::minMaxIdx(depth_image, &min, &max);
+    cv::Mat auxiliar;
+    // expand your range to 0..255. Similar to histEq();
+    depth_image.convertTo(auxiliar,CV_8UC1, 255 / (max-min), -min); 
+    cv::Mat depth_colorida;
+    applyColorMap(auxiliar, depth_colorida, cv::COLORMAP_JET);
+
+
     for(int i=0; i < faces.size(); i++)
-      rectangle(depth_image, Point(faces[i][0]-faces[i][2],faces[i][1]-faces[i][2]), Point(faces[i][0]+faces[i][2],faces[i][1]+faces[i][2]), CV_RGB(0,255,0), 2, 8, 0);
-    cv::imshow("Detecao Facial 3D", depth_image);
+      rectangle(depth_colorida, Point(faces[i][0]-faces[i][2],faces[i][1]-faces[i][2]), Point(faces[i][0]+faces[i][2],faces[i][1]+faces[i][2]), CV_RGB(0,255,0), 2, 8, 0);
+    
+    cv::imshow("Detecao Facial 3D", depth_colorida);
     int key = cv::waitKey(1);
     protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape
 
