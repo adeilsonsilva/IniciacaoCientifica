@@ -30,7 +30,7 @@ function sortearAtvidades() {
     //alert("I am an alert box!");
     var arr = [];
 	while(arr.length < 3){
-		var randomnumber=Math.floor(Math.random()*6 + 1);
+		var randomnumber=Math.floor(Math.random()*9 + 1);
 		var found=false;
 		for(var i=0;i<arr.length;i++){
 			if(arr[i]==randomnumber){
